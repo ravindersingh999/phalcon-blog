@@ -20,11 +20,10 @@ class LoginController extends Controller
         $email = $this->request->getPost('email');
         $password = $this->request->getPost('password');
 
-        if($this->request->getPost()) {
-            if(empty($email) || empty($password)) {
+        if ($this->request->getPost()) {
+            if (empty($email) || empty($password)) {
                 $this->session->set('loginmsg', '*Fill all Details');
                 $this->response->redirect('login');
-                
             } else {
                 $user = Users::findFirst(array(
                     'email = :email: and password = :password:', 'bind' => array(
@@ -32,12 +31,33 @@ class LoginController extends Controller
                         'password' => $this->request->getPost("password")
                     )
                 ));
+                // print_r(json_encode($user->id));
+                // die();
 
-                if(!$user) {
+                if (!$user) {
                     $this->session->set('loginmsg', '*Wrong all Credentials');
                     $this->response->redirect('login');
-                } else {
-                    $this->response->redirect('dashboard');
+                }
+                if ($user->role == "admin") {
+                    // $this->session->set('loginmsg', '*Login request not approved yet');
+                    $this->response->redirect('admin');
+                    $this->session->set('auth', array(
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'role' => $user->role,
+                    ));
+                    // $this->response->redirect('login');
+                }
+                if ($user->role == "user") {
+                    if ($user->status == "restricted") {
+                        $this->session->set('loginmsg', '*Login request not approved yet');
+                        $this->response->redirect('login');
+                    } else {
+                        $this->response->redirect('user');
+                        $this->session->set('auth', array(
+                            'id' => $user->id,
+                        ));
+                    }
                 }
             }
         }
